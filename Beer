@@ -1,0 +1,40 @@
+//1
+MATCH (p:Person)-[:LIKES]->(b:Beer)-[:ISTYPE]->(bt:BeerType{name:'amber'}) 
+WHERE b.alcohol > 0.06
+RETURN p,b,bt
+
+//2
+MATCH (p:Person{name:'Jan'})-[:LIKES]->(b:Beer)<-[:BREWS]-(y:Brewery)
+RETURN  p.name, y.name, COUNT(b) AS num_beers_liked
+ORDER BY num_beers_liked DESC, y.name
+
+//3
+MATCH (p:Person{name:'Jan'})-[:LIKES]->(b:Beer)<-[:BREWS]-(y:Brewery)
+WITH  p, y, COUNT(b) AS num_beers_liked
+ORDER BY num_beers_liked DESC, y.name
+WITH collect(y)[..4] AS Top_Four, p
+UNWIND Top_Four AS TF
+MATCH (b)<-[:BREWS]-(TF)
+WHERE NOT (p)-[:LIKES]->(b)
+RETURN TF.name, b.name
+ORDER BY TF.name, b.name
+
+//4
+MATCH (p:Person)-[:LIKES]->(b:Beer)<-[:BREWS]-(y:Brewery)          
+WITH  p, y, COUNT(b) AS num_beers_liked
+ORDER BY num_beers_liked DESC, y.name
+WITH collect(y)[..4] AS Top_Four, p
+UNWIND Top_Four AS TF
+CREATE (p)-[r:TOPFOUR]->(TF)
+RETURN p, TF
+
+//5
+MATCH(p)-[r:TOPFOUR]->(y)
+RETURN y.name, COUNT(r) AS num_of_appearance
+ORDER BY num_of_appearance DESC
+
+//6
+MATCH (p1:Person)-[r1:TOPFOUR]->(y)<-[r2:TOPFOUR]-(p2:Person)
+WITH p1, p2, count(*) AS num
+RETURN p1.name AS name,COUNT(p2.name) AS num_others
+ORDER BY num_others DESC, name DESC
